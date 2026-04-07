@@ -41,7 +41,7 @@ bool parse_cli(int argc, char **argv, CliArgs *args) {
 }
 
 void help(char *name) {
-    printf("USAGE: %s <build|install> [-|--help]\n", name);
+    printf("USAGE: %s <build|install> [-h|--help]\n", name);
 }
 
 bool build(Nob_Cmd *cmd) {
@@ -54,6 +54,13 @@ bool build(Nob_Cmd *cmd) {
 }
 
 bool install(Nob_Cmd *cmd) {
+    nob_log(NOB_INFO, "Installing...");
+    nob_cmd_append(cmd, "mv", "daemon", "/usr/bin/remote");
+    if (!nob_cmd_run(cmd)) return false;
+    nob_cmd_append(cmd, "cp", "remote.service", "/etc/systemd/system/");
+    if (!nob_cmd_run(cmd)) return false;
+    nob_cmd_append(cmd, "systemctl", "enable", "remote.service", "--now");
+    if (!nob_cmd_run(cmd)) return false;
     return true;
 }
 

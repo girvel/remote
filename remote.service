@@ -1,0 +1,11 @@
+[Unit]
+Description=Connecting a TV remote
+
+[Service]
+ExecStart=/usr/bin/remote /dev/ttyUSB0
+Restart=always
+RestartSec=1
+User=root
+
+[Install]
+WantedBy=multi-user.target

@@ -5,7 +5,9 @@
 - [x] All keys
 - [x] Alt+Tab
 - [x] Win -> Win+Tab (cancelled)
-- [ ] Installation (maybe using nob)
+- [x] Building using nob
+- [x] Installation
+- [ ] Uninstallation
 - [ ] Test
 - [ ] Construct a shell
 - [ ] Visual feedback?

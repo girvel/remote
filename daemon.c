@@ -159,12 +159,12 @@ int parse_hex(const char *repr) {
 bool alt_activated = false;
 
 int main(int argc, char **argv) {
-    printf("Remote daemon started.\n");
-
     if (argc != 2) {
         printf("USAGE: %s [serial device]\n", argv[0]);
         return 1;
     }
+
+    printf("Remote daemon started.\n");
 
     int kb = open_virtual_keyboard();
     if (kb < 0) return 1;
@@ -175,6 +175,8 @@ int main(int argc, char **argv) {
         goto kb_close;
         return 1;
     }
+
+    printf("Devices initialized.\n");
 
     char buffer[256];
     while (true) {
