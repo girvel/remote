@@ -165,6 +165,8 @@ int main(int argc, char **argv) {
 
         buffer[n] = '\0';
         buffer[strcspn(buffer, "\r\n")] = '\0';
+        if (buffer[0] == '\0') continue;
+
         int value = parse_hex(buffer);
         printf("0x%s -> ", buffer);
         switch (value) {
