@@ -9,6 +9,69 @@
 #include <termios.h>
 #include <stdbool.h>
 
+void emit(int fd, int code);
+
+// -------------------------------------------------------------------------------------------------
+// [SECTION] Extendable
+// -------------------------------------------------------------------------------------------------
+
+void capabilities(int fd) {
+    ioctl(fd, UI_SET_KEYBIT, KEY_LEFTMETA);
+    ioctl(fd, UI_SET_KEYBIT, KEY_PLAYPAUSE);
+    ioctl(fd, UI_SET_KEYBIT, KEY_ENTER);
+    ioctl(fd, UI_SET_KEYBIT, KEY_NEXTSONG);
+    ioctl(fd, UI_SET_KEYBIT, KEY_PREVIOUSSONG);
+    ioctl(fd, UI_SET_KEYBIT, KEY_VOLUMEUP);
+    ioctl(fd, UI_SET_KEYBIT, KEY_VOLUMEDOWN);
+    ioctl(fd, UI_SET_KEYBIT, KEY_MUTE);
+}
+
+void actions(int value, int kb) {
+    switch (value) {
+    case 0x1C:
+        printf("[WIN]");
+        emit(kb, KEY_LEFTMETA);
+        break;
+    case 0x43:
+        printf("[PLAY/PAUSE]");
+        emit(kb, KEY_PLAYPAUSE);
+        break;
+    case 0x40:
+        printf("[NEXT TRACK]");
+        emit(kb, KEY_NEXTSONG);
+        break;
+    case 0x44:
+        printf("[PREV TRACK]");
+        emit(kb, KEY_PREVIOUSSONG);
+        break;
+    case 0x7:
+        printf("[VOLUME DOWN]");
+        emit(kb, KEY_VOLUMEDOWN);
+        break;
+    case 0x15:
+        printf("[VOLUME UP]");
+        emit(kb, KEY_VOLUMEUP);
+        break;
+    case 0x9:
+        printf("[MUTE]");
+        emit(kb, KEY_MUTE);
+        break;
+    case 0:
+        printf("NO ACTION");
+        break;
+    case -1:
+        printf("UNPARSABLE");
+        break;
+    default:
+        printf("UNKNOWN");
+        break;
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+// [SECTION] Logic
+// -------------------------------------------------------------------------------------------------
+
 int open_virtual_keyboard() {
     int fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
     if (fd < 0) {
@@ -17,8 +80,7 @@ int open_virtual_keyboard() {
     }
 
     ioctl(fd, UI_SET_EVBIT, EV_KEY);
-    ioctl(fd, UI_SET_KEYBIT, KEY_ENTER);
-    ioctl(fd, UI_SET_KEYBIT, KEY_LEFTMETA);
+    capabilities(fd);
 
     struct uinput_setup usetup = {
         .id.bustype = BUS_USB,
@@ -116,13 +178,18 @@ int parse_hex(const char *repr) {
 
 #define MS 1000
 
-int main() {
+int main(int argc, char **argv) {
     printf("Remote daemon started.\n");
+
+    if (argc != 2) {
+        printf("USAGE: %s [serial device]\n", argv[0]);
+        return 1;
+    }
 
     int kb = open_virtual_keyboard();
     usleep(500 * MS);
 
-    int serial = open_serial("/dev/ttyUSB0");  // TODO CLI port
+    int serial = open_serial(argv[1]);
     if (serial < 0) {
         goto kb_close;
         return 1;
@@ -136,34 +203,13 @@ int main() {
         buffer[n] = '\0';
         buffer[strcspn(buffer, "\r\n")] = '\0';
         int value = parse_hex(buffer);
-        printf("\"%s\" (%d) -> ", buffer, value);
-
-        switch (value) {
-        case 0x1C:
-            printf("[WIN]");
-            emit(kb, KEY_LEFTMETA);
-            break;
-        case 0:
-            printf("NO ACTION");
-            break;
-        case -1:
-            printf("UNPARSABLE");
-            break;
-        default:
-            printf("UNKNOWN");
-            break;
-        }
+        printf("0x%s (%d) -> ", buffer, value);
+        actions(value, kb);
         printf("\n");
-
-        if (strcmp(buffer, "1C") == 0) {
-            emit(kb, KEY_LEFTMETA);
-        }
     }
 
-    // emit(kb, EV_KEY, KEY_LEFTMETA, 1); // Key DOWN
-    // emit(kb, EV_SYN, SYN_REPORT, 0); // SYNC
-
     close(serial);
+
 kb_close:
     ioctl(kb, UI_DEV_DESTROY);
     close(kb);
