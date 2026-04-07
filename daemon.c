@@ -167,6 +167,7 @@ int main(int argc, char **argv) {
     }
 
     int kb = open_virtual_keyboard();
+    if (kb < 0) return 1;
     usleep(500 * MS);
 
     int serial = open_serial(argv[1]);
