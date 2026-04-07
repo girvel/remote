@@ -41,6 +41,9 @@ int open_virtual_keyboard() {
     }
 
     ioctl(fd, UI_SET_EVBIT, EV_KEY);
+    ioctl(fd, UI_SET_KEYBIT, KEY_LEFTALT);
+    ioctl(fd, UI_SET_KEYBIT, KEY_LEFTSHIFT);
+    ioctl(fd, UI_SET_KEYBIT, KEY_TAB);
     #define X(HEX, KEY) ioctl(fd, UI_SET_KEYBIT, KEY);
     KEYMAP
     #undef X
@@ -111,11 +114,19 @@ void emit_raw(int fd, int type, int code, EmitValue val) {
     write(fd, &ie, sizeof(ie));
 }
 
-void emit(int fd, int code) {
+void emit_down(int fd, int code) {
     emit_raw(fd, EV_KEY, code, VAL_DOWN);
     emit_raw(fd, EV_SYN, SYN_REPORT, VAL_UP);
+}
+
+void emit_up(int fd, int code) {
     emit_raw(fd, EV_KEY, code, VAL_UP);
     emit_raw(fd, EV_SYN, SYN_REPORT, VAL_UP);
+}
+
+void emit(int fd, int code) {
+    emit_down(fd, code);
+    emit_up(fd, code);
 }
 
 int parse_hex(const char *repr) {
@@ -140,6 +151,8 @@ int parse_hex(const char *repr) {
 }
 
 #define MS 1000
+
+bool alt_activated = false;
 
 int main(int argc, char **argv) {
     printf("Remote daemon started.\n");
@@ -177,6 +190,30 @@ int main(int argc, char **argv) {
             break;
         KEYMAP
         #undef X
+        case 0x46:
+            alt_activated ^= true;
+            if (alt_activated) {
+                printf("OPEN ALT TAB MENU");
+                emit_down(kb, KEY_LEFTALT);
+                emit(kb, KEY_TAB);
+                emit_down(kb, KEY_LEFTSHIFT);
+                emit(kb, KEY_TAB);
+                emit_up(kb, KEY_LEFTSHIFT);
+            } else {
+                printf("CLOSE ALT TAB MENU");
+                emit_up(kb, KEY_LEFTALT);
+            }
+            break;
+        case 0x47:
+            printf("NEXT WINDOW");
+            emit(kb, KEY_TAB);
+            break;
+        case 0x45:
+            printf("PREV WINDOW");
+            emit_down(kb, KEY_LEFTSHIFT);
+            emit(kb, KEY_TAB);
+            emit_up(kb, KEY_LEFTSHIFT);
+            break;
         case 0:
             printf("NO ACTION");
             break;
