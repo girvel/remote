@@ -6,6 +6,7 @@
 typedef enum {
     COMMAND_BUILD,
     COMMAND_INSTALL,
+    COMMAND_UNINSTALL,
 } CliCommand;
 
 typedef struct {
@@ -26,6 +27,8 @@ bool parse_cli(int argc, char **argv, CliArgs *args) {
             pos++;
             if (strcmp(arg, "install") == 0) {
                 args->command = COMMAND_INSTALL;
+            } else if (strcmp(arg, "uninstall") == 0) {
+                args->command = COMMAND_UNINSTALL;
             } else if (strcmp(arg, "build") == 0) {
                 args->command = COMMAND_BUILD;
             } else {
@@ -41,7 +44,7 @@ bool parse_cli(int argc, char **argv, CliArgs *args) {
 }
 
 void help(char *name) {
-    printf("USAGE: %s <build|install> [-h|--help]\n", name);
+    printf("USAGE: %s [build|install|uninstall] [-h|--help]\n", name);
 }
 
 bool build(Nob_Cmd *cmd) {
@@ -59,8 +62,23 @@ bool install(Nob_Cmd *cmd) {
     if (!nob_cmd_run(cmd)) return false;
     nob_cmd_append(cmd, "cp", "remote.service", "/etc/systemd/system/");
     if (!nob_cmd_run(cmd)) return false;
+    nob_cmd_append(cmd, "systemctl", "daemon-reload");
+    if (!nob_cmd_run(cmd)) return false;
     nob_cmd_append(cmd, "systemctl", "enable", "remote.service", "--now");
     if (!nob_cmd_run(cmd)) return false;
+    return true;
+}
+
+bool uninstall(Nob_Cmd *cmd) {
+    nob_log(NOB_INFO, "Uninstalling...");
+    nob_cmd_append(cmd, "systemctl", "disable", "remote.service", "--now");
+    nob_cmd_run(cmd);
+    nob_cmd_append(cmd, "rm", "/usr/bin/remote");
+    nob_cmd_run(cmd);
+    nob_cmd_append(cmd, "rm", "/etc/systemd/system/remote.service");
+    nob_cmd_run(cmd);
+    nob_cmd_append(cmd, "systemctl", "daemon-reload");
+    nob_cmd_run(cmd);
     return true;
 }
 
@@ -83,6 +101,8 @@ int main(int argc, char **argv) {
         return !build(&cmd);
     case COMMAND_INSTALL:
         return !(build(&cmd) && install(&cmd));
+    case COMMAND_UNINSTALL:
+        return !uninstall(&cmd);
     }
     return 0;
 }

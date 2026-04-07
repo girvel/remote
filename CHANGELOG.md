@@ -7,7 +7,7 @@
 - [x] Win -> Win+Tab (cancelled)
 - [x] Building using nob
 - [x] Installation
-- [ ] Uninstallation
+- [x] Uninstallation
 - [ ] Test
 - [ ] Construct a shell
 - [ ] Visual feedback?
