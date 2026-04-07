@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <string.h>
@@ -5,6 +6,8 @@
 #include <unistd.h>
 #include <linux/uinput.h>
 #include <linux/uinput.h>
+#include <termios.h>
+#include <stdbool.h>
 
 int open_virtual_keyboard() {
     int fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
@@ -34,32 +37,135 @@ int open_virtual_keyboard() {
     return fd;
 }
 
+int open_serial(const char* port_name) {
+    int serial_fd = open(port_name, O_RDWR | O_NOCTTY);
+    if (serial_fd < 0) {
+        perror("Failed to open serial port");
+        return -1;
+    }
+
+    struct termios tty;
+    if (tcgetattr(serial_fd, &tty) != 0) {
+        perror("Error from tcgetattr");
+        return -1;
+    }
+
+    cfsetospeed(&tty, B9600);
+    cfsetispeed(&tty, B9600);
+
+    // Set 8N1 (8 bits, no parity, 1 stop bit)
+    tty.c_cflag &= ~PARENB;
+    tty.c_cflag &= ~CSTOPB;
+    tty.c_cflag &= ~CSIZE;
+    tty.c_cflag |= CS8;
+    
+    // Disable hardware flow control & enable reading
+    tty.c_cflag &= ~CRTSCTS;
+    tty.c_cflag |= CREAD | CLOCAL;
+
+    // Set Canonical Mode (reads line-by-line, waiting for '\n')
+    tty.c_lflag |= ICANON;
+    
+    // Apply settings
+    tcsetattr(serial_fd, TCSANOW, &tty);
+
+    return serial_fd;
+}
+
 typedef enum {
     VAL_UP = 0,
     VAL_DOWN = 1,
     VAL_REPEAT = 2,
 } EmitValue;
 
-void emit(int fd, int type, int code, EmitValue val) {
-    struct input_event ie = {
-      .type = type,
-      .code = code,
-      .value = val,
-    };
-    
+void emit_raw(int fd, int type, int code, EmitValue val) {
+    struct input_event ie = {0};
+    ie.type = type;
+    ie.code = code;
+    ie.value = val;
     write(fd, &ie, sizeof(ie));
+}
+
+void emit(int fd, int code) {
+    emit_raw(fd, EV_KEY, code, VAL_DOWN);
+    emit_raw(fd, EV_SYN, SYN_REPORT, VAL_UP);
+    emit_raw(fd, EV_KEY, code, VAL_UP);
+    emit_raw(fd, EV_SYN, SYN_REPORT, VAL_UP);
+}
+
+int parse_hex(const char *repr) {
+    int result = 0;
+    for (const char *ch = repr; *ch; ch++) {
+        int digit;
+        if (isdigit(*ch)) {
+            digit = *ch - '0';
+        } else if (*ch >= 'A' && *ch <= 'F') {
+            digit = *ch - 'A' + 10;
+        } else if (*ch >= 'a' && *ch <= 'f') {
+            digit = *ch - 'A' + 10;
+        } else {
+            return -1;
+        }
+
+        result *= 16;
+        result += digit;
+    }
+
+    return result;
 }
 
 #define MS 1000
 
 int main() {
     printf("Remote daemon started.\n");
-    int kb = open_virtual_keyboard();
 
+    int kb = open_virtual_keyboard();
     usleep(500 * MS);
 
-    emit(kb, EV_KEY, KEY_LEFTMETA, 1); // Key DOWN
-    emit(kb, EV_SYN, SYN_REPORT, 0); // SYNC
+    int serial = open_serial("/dev/ttyUSB0");  // TODO CLI port
+    if (serial < 0) {
+        goto kb_close;
+        return 1;
+    }
 
+    char buffer[256];
+    while (true) {
+        int n = read(serial, buffer, sizeof(buffer) - 1);
+        if (n == 0) continue;
+
+        buffer[n] = '\0';
+        buffer[strcspn(buffer, "\r\n")] = '\0';
+        int value = parse_hex(buffer);
+        printf("\"%s\" (%d) -> ", buffer, value);
+
+        switch (value) {
+        case 0x1C:
+            printf("[WIN]");
+            emit(kb, KEY_LEFTMETA);
+            break;
+        case 0:
+            printf("NO ACTION");
+            break;
+        case -1:
+            printf("UNPARSABLE");
+            break;
+        default:
+            printf("UNKNOWN");
+            break;
+        }
+        printf("\n");
+
+        if (strcmp(buffer, "1C") == 0) {
+            emit(kb, KEY_LEFTMETA);
+        }
+    }
+
+    // emit(kb, EV_KEY, KEY_LEFTMETA, 1); // Key DOWN
+    // emit(kb, EV_SYN, SYN_REPORT, 0); // SYNC
+
+    close(serial);
+kb_close:
+    ioctl(kb, UI_DEV_DESTROY);
+    close(kb);
     return 0;
 }
