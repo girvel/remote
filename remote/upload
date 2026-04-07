@@ -1,0 +1,4 @@
+#!/usr/bin/sh
+arduino-cli compile --fqbn arduino:avr:uno
+arduino-cli upload -p $1 --fqbn arduino:avr:uno
+arduino-cli monitor -p $1 --config baudrate=9600 --config rts=off --config dtr=off
