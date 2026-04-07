@@ -29,6 +29,10 @@
     X(0x19, KEY_SPACE) \
     X(0xD,  KEY_F11)
 
+#define ALT_TAB_TOGGLE 0x46
+#define ALT_TAB_PREV 0x45
+#define ALT_TAB_NEXT 0x47
+
 // -------------------------------------------------------------------------------------------------
 // [SECTION] Logic
 // -------------------------------------------------------------------------------------------------
@@ -190,7 +194,7 @@ int main(int argc, char **argv) {
             break;
         KEYMAP
         #undef X
-        case 0x46:
+        case ALT_TAB_TOGGLE:
             alt_activated ^= true;
             if (alt_activated) {
                 printf("OPEN ALT TAB MENU");
@@ -204,11 +208,11 @@ int main(int argc, char **argv) {
                 emit_up(kb, KEY_LEFTALT);
             }
             break;
-        case 0x47:
+        case ALT_TAB_NEXT:
             printf("NEXT WINDOW");
             emit(kb, KEY_TAB);
             break;
-        case 0x45:
+        case ALT_TAB_PREV:
             printf("PREV WINDOW");
             emit_down(kb, KEY_LEFTSHIFT);
             emit(kb, KEY_TAB);
