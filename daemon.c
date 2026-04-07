@@ -20,7 +20,14 @@
     X(0x44, KEY_PREVIOUSSONG) \
     X(0x7,  KEY_VOLUMEDOWN) \
     X(0x15, KEY_VOLUMEUP) \
-    X(0x9,  KEY_MUTE)
+    X(0x9,  KEY_MUTE) \
+    X(0x18, KEY_UP) \
+    X(0x52, KEY_DOWN) \
+    X(0x8,  KEY_LEFT) \
+    X(0x5A, KEY_RIGHT) \
+    X(0x16, KEY_ENTER) \
+    X(0x19, KEY_SPACE) \
+    X(0xD,  KEY_F11)
 
 // -------------------------------------------------------------------------------------------------
 // [SECTION] Logic

@@ -6,3 +6,4 @@
 - [ ] Installation (maybe using nob)
 - [ ] Test
 - [ ] Construct a shell
+- [ ] Visual feedback?
