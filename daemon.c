@@ -9,64 +9,18 @@
 #include <termios.h>
 #include <stdbool.h>
 
-void emit(int fd, int code);
-
 // -------------------------------------------------------------------------------------------------
 // [SECTION] Extendable
 // -------------------------------------------------------------------------------------------------
 
-void capabilities(int fd) {
-    ioctl(fd, UI_SET_KEYBIT, KEY_LEFTMETA);
-    ioctl(fd, UI_SET_KEYBIT, KEY_PLAYPAUSE);
-    ioctl(fd, UI_SET_KEYBIT, KEY_ENTER);
-    ioctl(fd, UI_SET_KEYBIT, KEY_NEXTSONG);
-    ioctl(fd, UI_SET_KEYBIT, KEY_PREVIOUSSONG);
-    ioctl(fd, UI_SET_KEYBIT, KEY_VOLUMEUP);
-    ioctl(fd, UI_SET_KEYBIT, KEY_VOLUMEDOWN);
-    ioctl(fd, UI_SET_KEYBIT, KEY_MUTE);
-}
-
-void actions(int value, int kb) {
-    switch (value) {
-    case 0x1C:
-        printf("[WIN]");
-        emit(kb, KEY_LEFTMETA);
-        break;
-    case 0x43:
-        printf("[PLAY/PAUSE]");
-        emit(kb, KEY_PLAYPAUSE);
-        break;
-    case 0x40:
-        printf("[NEXT TRACK]");
-        emit(kb, KEY_NEXTSONG);
-        break;
-    case 0x44:
-        printf("[PREV TRACK]");
-        emit(kb, KEY_PREVIOUSSONG);
-        break;
-    case 0x7:
-        printf("[VOLUME DOWN]");
-        emit(kb, KEY_VOLUMEDOWN);
-        break;
-    case 0x15:
-        printf("[VOLUME UP]");
-        emit(kb, KEY_VOLUMEUP);
-        break;
-    case 0x9:
-        printf("[MUTE]");
-        emit(kb, KEY_MUTE);
-        break;
-    case 0:
-        printf("NO ACTION");
-        break;
-    case -1:
-        printf("UNPARSABLE");
-        break;
-    default:
-        printf("UNKNOWN");
-        break;
-    }
-}
+#define KEYMAP \
+    X(0x1C, KEY_LEFTMETA) \
+    X(0x43, KEY_PLAYPAUSE) \
+    X(0x40, KEY_NEXTSONG) \
+    X(0x44, KEY_PREVIOUSSONG) \
+    X(0x7,  KEY_VOLUMEDOWN) \
+    X(0x15, KEY_VOLUMEUP) \
+    X(0x9,  KEY_MUTE)
 
 // -------------------------------------------------------------------------------------------------
 // [SECTION] Logic
@@ -80,7 +34,9 @@ int open_virtual_keyboard() {
     }
 
     ioctl(fd, UI_SET_EVBIT, EV_KEY);
-    capabilities(fd);
+    #define X(HEX, KEY) ioctl(fd, UI_SET_KEYBIT, KEY);
+    KEYMAP
+    #undef X
 
     struct uinput_setup usetup = {
         .id.bustype = BUS_USB,
@@ -203,8 +159,25 @@ int main(int argc, char **argv) {
         buffer[n] = '\0';
         buffer[strcspn(buffer, "\r\n")] = '\0';
         int value = parse_hex(buffer);
-        printf("0x%s (%d) -> ", buffer, value);
-        actions(value, kb);
+        printf("0x%s -> ", buffer);
+        switch (value) {
+        #define X(HEX, KEY) \
+        case HEX: \
+            printf("[" #KEY "]"); \
+            emit(kb, KEY); \
+            break;
+        KEYMAP
+        #undef X
+        case 0:
+            printf("NO ACTION");
+            break;
+        case -1:
+            printf("UNPARSABLE");
+            break;
+        default:
+            printf("UNKNOWN");
+            break;
+        }
         printf("\n");
     }
 

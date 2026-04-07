@@ -1,7 +1,7 @@
 # CHANGELOG
 
-- [ ] POC
-- [ ] Use x macros?
+- [x] POC
+- [x] Use x macros?
 - [ ] All keys
 - [ ] Installation (maybe using nob)
 - [ ] Test
