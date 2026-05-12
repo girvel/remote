@@ -14,24 +14,18 @@
 // -------------------------------------------------------------------------------------------------
 
 #define KEYMAP \
-    X(0x45, KEY_LEFTMETA) \
+    X(0x45, KEY_F) \
     X(0x1A, KEY_PLAYPAUSE) \
-    X(0xD,  KEY_NEXTSONG) \
+    X(0x0D, KEY_NEXTSONG) \
     X(0x11, KEY_PREVIOUSSONG) \
     X(0x51, KEY_VOLUMEDOWN) \
     X(0x4D, KEY_VOLUMEUP) \
     X(0x19, KEY_MUTE) \
-    X(0x6,  KEY_UP) \
+    X(0x06, KEY_UP) \
     X(0x16, KEY_DOWN) \
     X(0x5A, KEY_LEFT) \
     X(0x1B, KEY_RIGHT) \
-    X(-2,   KEY_ENTER) \
-    X(-3,   KEY_SPACE) \
-    X(-4,   KEY_F11)
-
-#define ALT_TAB_TOGGLE -5
-#define ALT_TAB_PREV -6
-#define ALT_TAB_NEXT -7
+    X(0x05, KEY_ESC)
 
 // -------------------------------------------------------------------------------------------------
 // [SECTION] Logic
@@ -156,8 +150,6 @@ int parse_hex(const char *repr) {
 
 #define MS 1000
 
-bool alt_activated = false;
-
 int main(int argc, char **argv) {
     if (argc != 2) {
         printf("USAGE: %s [serial device]\n", argv[0]);
@@ -190,6 +182,7 @@ int main(int argc, char **argv) {
         int value = parse_hex(buffer);
         printf("0x%s -> ", buffer);
         switch (value) {
+
         #define X(HEX, KEY) \
         case HEX: \
             printf("[" #KEY "]"); \
@@ -197,38 +190,15 @@ int main(int argc, char **argv) {
             break;
         KEYMAP
         #undef X
-        case ALT_TAB_TOGGLE:
-            alt_activated ^= true;
-            if (alt_activated) {
-                printf("OPEN ALT TAB MENU");
-                emit_down(kb, KEY_LEFTALT);
-                emit(kb, KEY_TAB);
-                emit_down(kb, KEY_LEFTSHIFT);
-                emit(kb, KEY_TAB);
-                emit_up(kb, KEY_LEFTSHIFT);
-            } else {
-                printf("CLOSE ALT TAB MENU");
-                emit_up(kb, KEY_LEFTALT);
-            }
-            break;
-        case ALT_TAB_NEXT:
-            printf("NEXT WINDOW");
-            emit(kb, KEY_TAB);
-            break;
-        case ALT_TAB_PREV:
-            printf("PREV WINDOW");
-            emit_down(kb, KEY_LEFTSHIFT);
-            emit(kb, KEY_TAB);
-            emit_up(kb, KEY_LEFTSHIFT);
-            break;
+
         case 0:
-            printf("NO ACTION");
+            printf("no action");
             break;
         case -1:
-            printf("UNPARSABLE");
+            printf("unparsable");
             break;
         default:
-            printf("UNKNOWN");
+            printf("unknown");
             break;
         }
         printf("\n");
