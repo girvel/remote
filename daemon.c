@@ -14,24 +14,24 @@
 // -------------------------------------------------------------------------------------------------
 
 #define KEYMAP \
-    X(0x1C, KEY_LEFTMETA) \
-    X(0x43, KEY_PLAYPAUSE) \
-    X(0x40, KEY_NEXTSONG) \
-    X(0x44, KEY_PREVIOUSSONG) \
-    X(0x7,  KEY_VOLUMEDOWN) \
-    X(0x15, KEY_VOLUMEUP) \
-    X(0x9,  KEY_MUTE) \
-    X(0x18, KEY_UP) \
-    X(0x52, KEY_DOWN) \
-    X(0x8,  KEY_LEFT) \
-    X(0x5A, KEY_RIGHT) \
-    X(0x16, KEY_ENTER) \
-    X(0x19, KEY_SPACE) \
-    X(0xD,  KEY_F11)
+    X(0x45, KEY_LEFTMETA) \
+    X(0x1A, KEY_PLAYPAUSE) \
+    X(0xD,  KEY_NEXTSONG) \
+    X(0x11, KEY_PREVIOUSSONG) \
+    X(0x51, KEY_VOLUMEDOWN) \
+    X(0x4D, KEY_VOLUMEUP) \
+    X(0x19, KEY_MUTE) \
+    X(0x6,  KEY_UP) \
+    X(0x16, KEY_DOWN) \
+    X(0x5A, KEY_LEFT) \
+    X(0x1B, KEY_RIGHT) \
+    X(-2,   KEY_ENTER) \
+    X(-3,   KEY_SPACE) \
+    X(-4,   KEY_F11)
 
-#define ALT_TAB_TOGGLE 0x46
-#define ALT_TAB_PREV 0x45
-#define ALT_TAB_NEXT 0x47
+#define ALT_TAB_TOGGLE -5
+#define ALT_TAB_PREV -6
+#define ALT_TAB_NEXT -7
 
 // -------------------------------------------------------------------------------------------------
 // [SECTION] Logic
