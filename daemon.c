@@ -25,7 +25,20 @@
     X(0x16, KEY_DOWN) \
     X(0x5A, KEY_LEFT) \
     X(0x1B, KEY_RIGHT) \
-    X(0x05, KEY_ESC)
+    X(0x05, KEY_ESC) \
+    X(0x17, KEY_ENTER) \
+    X(0x13, KEY_BACKSPACE) \
+    X(0x0F, KEY_0) \
+    X(0x52, KEY_1) \
+    X(0x50, KEY_2) \
+    X(0x10, KEY_3) \
+    X(0x56, KEY_4) \
+    X(0x54, KEY_5) \
+    X(0x14, KEY_6) \
+    X(0x4E, KEY_7) \
+    X(0x4C, KEY_8) \
+    X(0x0C, KEY_9)
+
 
 // -------------------------------------------------------------------------------------------------
 // [SECTION] Logic
