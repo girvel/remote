@@ -4,8 +4,8 @@
 
 ## Better integration
 
-- [ ] Wait for USB device
-- [ ] Loop over /dev/ttyUSB*
+- [x] Wait for USB device
+- [x] Loop over /dev/ttyUSB*
 - [ ] Fix 0xStarted
 - [ ] Review
 

@@ -228,15 +228,18 @@ int main(int argc, char **argv)
     while (1) {
         printf("Waiting for user to connect the receiver...\n");
 
-        char *device;
+        char device[16];
         int serial;
         while (1) {
-            device = "/dev/ttyUSB0";
-            serial = open_serial(device);
-            if (serial > 0) break;
+            for (int n = 0; n < 256; n++) {
+                snprintf(device, sizeof(device)/sizeof(*device), "/dev/ttyUSB%d", n);
+                serial = open_serial(device);
+                if (serial > 0) goto connected;
+            }
             usleep(100 * MS);
         }
 
+    connected:
         printf("Connected to %s\n", device);
         emulate_keyboard(kb, serial);
         printf("Disconnected from %s\n", device);
