@@ -1,5 +1,16 @@
 # CHANGELOG
 
+- [ ] Win+Left/Right
+
+## Better integration
+
+- [ ] Wait for USB device
+- [ ] Loop over /dev/ttyUSB*
+- [ ] Fix 0xStarted
+- [ ] Review
+
+## (Done)
+
 - [x] POC
 - [x] Use x macros?
 - [x] All keys
@@ -8,7 +19,4 @@
 - [x] Building using nob
 - [x] Installation
 - [x] Uninstallation
-- [ ] Test
-- [ ] Construct a shell
-- [ ] Visual feedback?
-- [ ] Different remote?
+- [x] Different remote?

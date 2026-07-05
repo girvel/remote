@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <errno.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <string.h>
@@ -44,7 +45,8 @@
 // [SECTION] Logic
 // -------------------------------------------------------------------------------------------------
 
-int open_virtual_keyboard() {
+int open_virtual_keyboard(void)
+{
     int fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
     if (fd < 0) {
         perror("Failed to open /dev/uinput (Are you running as root?)");
@@ -76,10 +78,10 @@ int open_virtual_keyboard() {
     return fd;
 }
 
-int open_serial(const char* port_name) {
+int open_serial(const char* port_name)
+{
     int serial_fd = open(port_name, O_RDWR | O_NOCTTY);
     if (serial_fd < 0) {
-        perror("Failed to open serial port");
         return -1;
     }
 
@@ -117,7 +119,8 @@ typedef enum {
     VAL_REPEAT = 2,
 } EmitValue;
 
-void emit_raw(int fd, int type, int code, EmitValue val) {
+void emit_raw(int fd, int type, int code, EmitValue val)
+{
     struct input_event ie = {0};
     ie.type = type;
     ie.code = code;
@@ -125,22 +128,26 @@ void emit_raw(int fd, int type, int code, EmitValue val) {
     write(fd, &ie, sizeof(ie));
 }
 
-void emit_down(int fd, int code) {
+void emit_down(int fd, int code)
+{
     emit_raw(fd, EV_KEY, code, VAL_DOWN);
     emit_raw(fd, EV_SYN, SYN_REPORT, VAL_UP);
 }
 
-void emit_up(int fd, int code) {
+void emit_up(int fd, int code)
+{
     emit_raw(fd, EV_KEY, code, VAL_UP);
     emit_raw(fd, EV_SYN, SYN_REPORT, VAL_UP);
 }
 
-void emit(int fd, int code) {
+void emit(int fd, int code)
+{
     emit_down(fd, code);
     emit_up(fd, code);
 }
 
-int parse_hex(const char *repr) {
+int parse_hex(const char *repr)
+{
     int result = 0;
     for (const char *ch = repr; *ch; ch++) {
         int digit;
@@ -161,32 +168,17 @@ int parse_hex(const char *repr) {
     return result;
 }
 
-#define MS 1000
-
-int main(int argc, char **argv) {
-    if (argc != 2) {
-        printf("USAGE: %s [serial device]\n", argv[0]);
-        return 1;
-    }
-
-    printf("Remote daemon started.\n");
-
-    int kb = open_virtual_keyboard();
-    if (kb < 0) return 1;
-    usleep(500 * MS);
-
-    int serial = open_serial(argv[1]);
-    if (serial < 0) {
-        goto kb_close;
-        return 1;
-    }
-
-    printf("Devices initialized.\n");
-
+void emulate_keyboard(int kb, int serial)
+{
     char buffer[256];
     while (true) {
         int n = read(serial, buffer, sizeof(buffer) - 1);
-        if (n == 0) continue;
+        if (n < 0) {
+            if (errno == EINTR) continue;
+            perror("Serial read error (disconnected?)");
+            return;
+        }
+        if (n == 0) return;
 
         buffer[n] = '\0';
         buffer[strcspn(buffer, "\r\n")] = '\0';
@@ -216,10 +208,41 @@ int main(int argc, char **argv) {
         }
         printf("\n");
     }
+}
 
-    close(serial);
+#define MS 1000
 
-kb_close:
+int main(int argc, char **argv)
+{
+    if (argc != 1) {
+        fprintf(stderr, "USAGE: %s\n", argv[0]);
+        return 1;
+    }
+
+    printf("Remote daemon started.\n");
+
+    int kb = open_virtual_keyboard();
+    if (kb < 0) return 1;
+    usleep(500 * MS);
+
+    while (1) {
+        printf("Waiting for user to connect the receiver...\n");
+
+        char *device;
+        int serial;
+        while (1) {
+            device = "/dev/ttyUSB0";
+            serial = open_serial(device);
+            if (serial > 0) break;
+            usleep(100 * MS);
+        }
+
+        printf("Connected to %s\n", device);
+        emulate_keyboard(kb, serial);
+        printf("Disconnected from %s\n", device);
+        close(serial);
+    }
+
     ioctl(kb, UI_DEV_DESTROY);
     close(kb);
     return 0;
