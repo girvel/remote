@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <errno.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <string.h>
@@ -44,6 +45,55 @@
 // -------------------------------------------------------------------------------------------------
 // [SECTION] Logic
 // -------------------------------------------------------------------------------------------------
+
+#define RED "\e[31m"
+#define GREEN "\e[32m"
+#define BLUE "\e[34m"
+#define RESET "\e[0m"
+
+typedef enum {
+    LOG_KEY,
+    LOG_INFO,
+    LOG_ERROR,
+} LogLevel;
+
+void logm(LogLevel level, const char *message, ...) __attribute__((format(printf, 2, 3)));
+
+void logm(LogLevel level, const char *message, ...)
+{
+    bool supports_color = isatty(STDOUT_FILENO);
+    if (supports_color) {
+        switch (level) {
+        case LOG_KEY:
+            printf(BLUE "[KEY]" RESET " ");
+            break;
+        case LOG_INFO:
+            printf(GREEN "[INF]" RESET " ");
+            break;
+        case LOG_ERROR:
+            printf(RED "[ERR]" RESET " ");
+            break;
+        }
+    } else {
+        switch (level) {
+        case LOG_KEY:
+            printf("[KEY] ");
+            break;
+        case LOG_INFO:
+            printf("[INF] ");
+            break;
+        case LOG_ERROR:
+            printf("[ERR] ");
+            break;
+        }
+    }
+
+    va_list args;
+    va_start(args, message);
+    vprintf(message, args);
+    va_end(args);
+    printf("\n");
+}
 
 int open_virtual_keyboard(void)
 {
@@ -189,24 +239,24 @@ void emulate_keyboard(int kb, int serial)
 
         #define X(HEX, KEY) \
         case HEX: \
-            printf(#HEX " -> [" #KEY "]\n"); \
+            logm(LOG_KEY, #HEX " -> [" #KEY "]"); \
             emit(kb, KEY); \
             break;
         KEYMAP
         #undef X
 
         case 0:
-            printf("Receiver miss\n");
+            logm(LOG_KEY, "Receiver miss");
             break;
         case -1:
             if (strcmp(buffer, "Started.") == 0) {
-                printf("%s -> Receiver started\n", buffer);
+                logm(LOG_KEY, "\"%s\" -> Receiver started", buffer);
             } else {
-                printf("%s -> (unparsable)\n", buffer);
+                logm(LOG_KEY, "%s -> (unparsable)", buffer);
             }
             break;
         default:
-            printf("0x%02x -> (unknown)\n", value);
+            logm(LOG_KEY, "0x%02x -> (unknown)", value);
             break;
         }
     }
@@ -221,14 +271,14 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    printf("Remote daemon started.\n");
+    logm(LOG_INFO, "Remote daemon started.");
 
     int kb = open_virtual_keyboard();
     if (kb < 0) return 1;
     usleep(500 * MS);
 
     while (1) {
-        printf("Waiting for user to connect the receiver...\n");
+        logm(LOG_INFO, "Waiting for user to connect the receiver...");
 
         char device[16];
         int serial;
@@ -242,9 +292,9 @@ int main(int argc, char **argv)
         }
 
     connected:
-        printf("Connected to %s\n", device);
+        logm(LOG_INFO, "Connected to %s", device);
         emulate_keyboard(kb, serial);
-        printf("Disconnected from %s\n", device);
+        logm(LOG_INFO, "Disconnected from %s", device);
         close(serial);
     }
 
