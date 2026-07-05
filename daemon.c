@@ -235,7 +235,6 @@ void emulate_keyboard(int kb, int serial)
         if (buffer[0] == '\0') continue;
 
         int value = parse_hex(buffer);
-        printf("%s and %x\n", buffer, value);
         switch (value) {
 
         #define X(HEX, KEY) \
