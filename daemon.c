@@ -185,28 +185,30 @@ void emulate_keyboard(int kb, int serial)
         if (buffer[0] == '\0') continue;
 
         int value = parse_hex(buffer);
-        printf("0x%s -> ", buffer);
         switch (value) {
 
         #define X(HEX, KEY) \
         case HEX: \
-            printf("[" #KEY "]"); \
+            printf(#HEX " -> [" #KEY "]\n"); \
             emit(kb, KEY); \
             break;
         KEYMAP
         #undef X
 
         case 0:
-            printf("no action");
+            printf("Receiver miss\n");
             break;
         case -1:
-            printf("unparsable");
+            if (strcmp(buffer, "Started.") == 0) {
+                printf("%s -> Receiver started\n", buffer);
+            } else {
+                printf("%s -> (unparsable)\n", buffer);
+            }
             break;
         default:
-            printf("unknown");
+            printf("0x%02x -> (unknown)\n", value);
             break;
         }
-        printf("\n");
     }
 }
 
