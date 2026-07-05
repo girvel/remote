@@ -8,7 +8,7 @@
 - [x] Loop over /dev/ttyUSB*
 - [x] Fix 0xStarted
 - [x] Prettier logging
-- [ ] Review
+- [x] Review
 
 ## (Done)
 

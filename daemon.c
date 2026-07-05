@@ -7,7 +7,6 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <linux/uinput.h>
-#include <linux/uinput.h>
 #include <termios.h>
 #include <stdbool.h>
 
@@ -138,6 +137,7 @@ int open_serial(const char* port_name)
     struct termios tty;
     if (tcgetattr(serial_fd, &tty) != 0) {
         perror("Error from tcgetattr");
+        close(serial_fd);
         return -1;
     }
 
@@ -235,6 +235,7 @@ void emulate_keyboard(int kb, int serial)
         if (buffer[0] == '\0') continue;
 
         int value = parse_hex(buffer);
+        printf("%s and %x\n", buffer, value);
         switch (value) {
 
         #define X(HEX, KEY) \
@@ -286,7 +287,7 @@ int main(int argc, char **argv)
             for (int n = 0; n < 256; n++) {
                 snprintf(device, sizeof(device)/sizeof(*device), "/dev/ttyUSB%d", n);
                 serial = open_serial(device);
-                if (serial > 0) goto connected;
+                if (serial >= 0) goto connected;
             }
             usleep(100 * MS);
         }
