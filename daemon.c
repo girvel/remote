@@ -266,8 +266,10 @@ void emulate_keyboard(int kb, int serial)
 
 int main(int argc, char **argv)
 {
+    setvbuf(stdout, NULL, _IOLBF, 0);
+
     if (argc != 1) {
-        fprintf(stderr, "USAGE: %s\n", argv[0]);
+        logm(LOG_ERROR, "USAGE: %s\n", argv[0]);
         return 1;
     }
 
