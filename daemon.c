@@ -14,9 +14,9 @@
 // [SECTION] Extendable
 // -------------------------------------------------------------------------------------------------
 
-#define KEYMAP \
+#define FOR_KEYMAP(X) \
     X(0x45, KEY_F) \
-    X(0x1A, KEY_PLAYPAUSE) \
+    X(0x1A, KEY_SPACE) \
     X(0x0D, KEY_NEXTSONG) \
     X(0x11, KEY_PREVIOUSSONG) \
     X(0x51, KEY_VOLUMEDOWN) \
@@ -103,12 +103,9 @@ int open_virtual_keyboard(void)
     }
 
     ioctl(fd, UI_SET_EVBIT, EV_KEY);
-    ioctl(fd, UI_SET_KEYBIT, KEY_LEFTALT);
-    ioctl(fd, UI_SET_KEYBIT, KEY_LEFTSHIFT);
-    ioctl(fd, UI_SET_KEYBIT, KEY_TAB);
-    #define X(HEX, KEY) ioctl(fd, UI_SET_KEYBIT, KEY);
-    KEYMAP
-    #undef X
+    #define REGISTER_KEY(HEX, KEY) ioctl(fd, UI_SET_KEYBIT, KEY);
+    FOR_KEYMAP(REGISTER_KEY)
+    #undef REGISTER_KEY
 
     struct uinput_setup usetup = {
         .id.bustype = BUS_USB,
@@ -237,13 +234,13 @@ void emulate_keyboard(int kb, int serial)
         int value = parse_hex(buffer);
         switch (value) {
 
-        #define X(HEX, KEY) \
+        #define INTERPRET_KEY(HEX, KEY) \
         case HEX: \
             logm(LOG_KEY, #HEX " -> [" #KEY "]"); \
             emit(kb, KEY); \
             break;
-        KEYMAP
-        #undef X
+        FOR_KEYMAP(INTERPRET_KEY)
+        #undef INTERPRET_KEY
 
         case 0:
             logm(LOG_KEY, "Receiver miss");

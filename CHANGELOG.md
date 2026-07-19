@@ -1,6 +1,7 @@
 # CHANGELOG
 
-- [ ] Win+Left/Right
+- [ ] Current connection strategy hogs COM/USB ports; it could mess with arduino
+- [ ] Win+Left/Right?
 
 ## Better integration
 
